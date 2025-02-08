@@ -34,6 +34,31 @@ app.get('/contacts', async (req, res) => {
   }
 });
 
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }, // Keeping it unencrypted for testing
+  role: { type: String, required: true, enum: ["admin", "employee"] },
+});
+
+const User = mongoose.model("User", userSchema, 'user_roles');
+
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    const user = await User.findOne({ username, password });
+    if (user) {
+      res.json({ success: true, role: user.role });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
