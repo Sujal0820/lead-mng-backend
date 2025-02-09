@@ -69,6 +69,41 @@ app.get('/users', async (req, res) => {
   }
 });
 
+const taskSchema = new mongoose.Schema({
+  task_description: { type: String, required: true },
+  username: { type: String, required: true }
+});
+
+const Task = mongoose.model("Task", taskSchema, "tasks");
+
+// Add Task Route
+app.post('/tasks', async (req, res) => {
+  const { task_description, username } = req.body;
+
+  if (!task_description || !username) {
+    return res.status(400).json({ message: "Task description and username are required." });
+  }
+
+  try {
+    const newTask = new Task({ task_description, username });
+    await newTask.save();
+    res.status(201).json({ message: "Task added successfully", task: newTask });
+  } catch (err) {
+    res.status(500).json({ message: "Error saving task" });
+  }
+});
+
+// Fetch All Tasks Route
+app.get('/tasks', async (req, res) => {
+  try {
+    const tasks = await Task.find();
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching tasks" });
+  }
+});
+
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
