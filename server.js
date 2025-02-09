@@ -14,7 +14,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://pratikchavan0554062:f
 .then(() => console.log('MongoDB connected'))
 .catch((err) => console.log('MongoDB connection error: ', err));
 
-// Schema and model
+// Contact Schema
 const contactSchema = new mongoose.Schema({
   Name: { type: String, required: true },
   City: { type: String, required: true },
@@ -34,14 +34,16 @@ app.get('/contacts', async (req, res) => {
   }
 });
 
+// User Schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // Keeping it unencrypted for testing
+  password: { type: String, required: true }, // Keeping unencrypted for testing
   role: { type: String, required: true, enum: ["admin", "employee"] },
 });
 
 const User = mongoose.model("User", userSchema, 'user_roles');
 
+// Login Route
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -57,7 +59,15 @@ app.post('/login', async (req, res) => {
   }
 });
 
-
+// Fetch Users Route
+app.get('/users', async (req, res) => {
+  try {
+    const users = await User.find({}, "-password"); // Exclude password field for security
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching users" });
+  }
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;
