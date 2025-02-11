@@ -50,7 +50,7 @@ app.post('/login', async (req, res) => {
   try {
     const user = await User.findOne({ username, password });
     if (user) {
-      res.json({ success: true, role: user.role });
+      res.json({ success: true,username: user.username, role: user.role });
     } else {
       res.status(401).json({ success: false, message: "Invalid credentials" });
     }
