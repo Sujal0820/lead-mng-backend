@@ -103,6 +103,53 @@ app.get('/tasks', async (req, res) => {
   }
 });
 
+const statusSchema = new mongoose.Schema({
+  contactName: { type: String, required: true },
+  mobileNumber: { type: String, required: true },
+  employee: { type: String, required: true },
+  city: { type: String, required: true },
+  state: { type: String, required: true },
+  status: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+});
+
+const Status = mongoose.model("Status", statusSchema, "call_logs");
+
+app.post('/status', async (req, res) => {
+  const { contactName, mobileNumber, employee, city, state, status } = req.body;
+
+  if (!contactName || !mobileNumber || !employee || !city || !state || !status) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    const newStatus = new Status({
+      contactName,
+      mobileNumber,
+      employee,
+      city,
+      state,
+      status,
+      timestamp: new Date(),
+    });
+
+    await newStatus.save();
+    res.status(201).json({ message: "Status saved successfully", status: newStatus });
+  } catch (err) {
+    res.status(500).json({ message: "Error saving status", error: err.message });
+  }
+});
+
+app.get('/status', async (req, res) => {
+  try {
+    const statuses = await Status.find();
+    res.json(statuses);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching status logs", error: err.message });
+  }
+});
+
+
 
 // Start server
 const PORT = process.env.PORT || 5000;
