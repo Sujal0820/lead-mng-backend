@@ -132,6 +132,50 @@ app.get("/tasks", async (req, res) => {
   }
 });
 
+// Count for calls made by single employee
+app.get("/status/count/:username", async (req, res) => {
+  const { username } = req.params;
+
+  // Get today's start and end timestamps
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  try {
+    const count = await Status.countDocuments({
+      employee: username,
+      timestamp: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    res.json({ username, count });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching count", error: err.message });
+  }
+});
+
+// Count for total calls made today
+app.get("/status/count/today", async (req, res) => {
+  // Get today's start and end timestamps
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  try {
+    const totalCount = await Status.countDocuments({
+      timestamp: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    res.json({ totalCallsToday: totalCount });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching total count", error: err.message });
+  }
+});
+
+
 // Status Schema
 const statusSchema = new mongoose.Schema({
   contactName: { type: String, required: true },
