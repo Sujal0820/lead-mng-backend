@@ -70,14 +70,15 @@ app.delete("/users/:id", async (req, res) => {
   }
 });
 
+
 // Login Route
-app.post("/login", async (req, res) => {
+app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const user = await User.findOne({ username });
-    if (user && (await bcrypt.compare(password, user.password))) {
-      res.json({ success: true, username: user.username, role: user.role });
+    const user = await User.findOne({ username, password });
+    if (user) {
+      res.json({ success: true,username: user.username, role: user.role });
     } else {
       res.status(401).json({ success: false, message: "Invalid credentials" });
     }
