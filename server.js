@@ -1,18 +1,23 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://pratikchavan0554062:fQAfUT5zAEW44AFT@cluster0.uotoq.mongodb.net/Pratik0559975?retryWrites=true&w=majority', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch((err) => console.log('MongoDB connection error: ', err));
+mongoose
+  .connect(
+    process.env.MONGODB_URI ||
+      "mongodb+srv://pratikchavan0554062:fQAfUT5zAEW44AFT@cluster0.uotoq.mongodb.net/Pratik0559975?retryWrites=true&w=majority",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.log("MongoDB connection error: ", err));
 
 // Contact Schema
 const contactSchema = new mongoose.Schema({
@@ -22,35 +27,57 @@ const contactSchema = new mongoose.Schema({
   MobileNumber: { type: String, required: true },
 });
 
-const Contact = mongoose.model('Contacts', contactSchema, 'lead_small_db');
-
-// Routes
-app.get('/contacts', async (req, res) => {
-  try {
-    const contacts = await Contact.find();
-    res.json(contacts);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+const Contact = mongoose.model("Contacts", contactSchema, "lead_small_db");
 
 // User Schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // Keeping unencrypted for testing
+  password: { type: String, required: true }, // Hashed for security
   role: { type: String, required: true, enum: ["admin", "employee"] },
 });
 
-const User = mongoose.model("User", userSchema, 'user_roles');
+const User = mongoose.model("User", userSchema, "user_roles");
+
+// Create Employee (POST)
+app.post("/users", async (req, res) => {
+  const { username, password, role } = req.body;
+
+  if (!username || !password || !role) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    const newUser = new User({ username, password, role });
+    await newUser.save();
+    res.status(201).json({ message: "Employee created successfully", user: newUser });
+  } catch (err) {
+    res.status(500).json({ message: "Error creating employee", error: err.message });
+  }
+});
+
+// Remove Employee (DELETE)
+app.delete("/users/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedUser = await User.findByIdAndDelete(id);
+    if (!deletedUser) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+    res.json({ message: "Employee removed successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Error removing employee", error: err.message });
+  }
+});
 
 // Login Route
-app.post('/login', async (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const user = await User.findOne({ username, password });
-    if (user) {
-      res.json({ success: true,username: user.username, role: user.role });
+    const user = await User.findOne({ username });
+    if (user && (await bcrypt.compare(password, user.password))) {
+      res.json({ success: true, username: user.username, role: user.role });
     } else {
       res.status(401).json({ success: false, message: "Invalid credentials" });
     }
@@ -59,25 +86,26 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Fetch Users Route
-app.get('/users', async (req, res) => {
+// Fetch Users (GET)
+app.get("/users", async (req, res) => {
   try {
-    const users = await User.find({}, "-password"); // Exclude password field for security
+    const users = await User.find({}, "-password"); // Exclude password for security
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: "Error fetching users" });
   }
 });
 
+// Task Schema
 const taskSchema = new mongoose.Schema({
   task_description: { type: String, required: true },
-  username: { type: String, required: true }
+  username: { type: String, required: true },
 });
 
 const Task = mongoose.model("Task", taskSchema, "tasks");
 
-// Add Task Route
-app.post('/tasks', async (req, res) => {
+// Add Task (POST)
+app.post("/tasks", async (req, res) => {
   const { task_description, username } = req.body;
 
   if (!task_description || !username) {
@@ -93,8 +121,8 @@ app.post('/tasks', async (req, res) => {
   }
 });
 
-// Fetch All Tasks Route
-app.get('/tasks', async (req, res) => {
+// Fetch All Tasks (GET)
+app.get("/tasks", async (req, res) => {
   try {
     const tasks = await Task.find();
     res.json(tasks);
@@ -103,6 +131,7 @@ app.get('/tasks', async (req, res) => {
   }
 });
 
+// Status Schema
 const statusSchema = new mongoose.Schema({
   contactName: { type: String, required: true },
   mobileNumber: { type: String, required: true },
@@ -115,7 +144,8 @@ const statusSchema = new mongoose.Schema({
 
 const Status = mongoose.model("Status", statusSchema, "call_logs");
 
-app.post('/status', async (req, res) => {
+// Add Status (POST)
+app.post("/status", async (req, res) => {
   const { contactName, mobileNumber, employee, city, state, status } = req.body;
 
   if (!contactName || !mobileNumber || !employee || !city || !state || !status) {
@@ -140,7 +170,8 @@ app.post('/status', async (req, res) => {
   }
 });
 
-app.get('/status', async (req, res) => {
+// Fetch Status Logs (GET)
+app.get("/status", async (req, res) => {
   try {
     const statuses = await Status.find();
     res.json(statuses);
@@ -149,9 +180,7 @@ app.get('/status', async (req, res) => {
   }
 });
 
-
-
-// Start server
+// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
