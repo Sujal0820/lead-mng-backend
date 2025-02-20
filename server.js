@@ -156,7 +156,7 @@ app.get("/status/count/:username", async (req, res) => {
 });
 
 // Count for total calls made today
-app.get("/status/count/today", async (req, res) => {
+app.get("/status/all/today", async (req, res) => {
   // Get today's start and end timestamps
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
