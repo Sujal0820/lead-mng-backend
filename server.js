@@ -230,6 +230,31 @@ app.get("/status", async (req, res) => {
   }
 });
 
+// Add Contact (POST)
+app.post("/contacts", async (req, res) => {
+  const { Name, City, State, MobileNumber, AddedBy } = req.body;
+
+  if (!Name || !City || !State || !MobileNumber || !AddedBy) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    const newContact = new Contact({
+      Name,
+      City,
+      State,
+      MobileNumber,
+      AddedBy,
+    });
+
+    await newContact.save();
+    res.status(201).json({ message: "Contact added successfully", contact: newContact });
+  } catch (err) {
+    res.status(500).json({ message: "Error saving contact", error: err.message });
+  }
+});
+
+
 // Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
