@@ -184,6 +184,8 @@ const statusSchema = new mongoose.Schema({
   city: { type: String, required: true },
   state: { type: String, required: true },
   status: { type: String, required: true },
+  followUpDate: { type: Date },
+  narration: { type: String },
   timestamp: { type: Date, default: Date.now },
 });
 
@@ -191,7 +193,7 @@ const Status = mongoose.model("Status", statusSchema, "call_logs");
 
 // Add Status (POST)
 app.post("/status", async (req, res) => {
-  const { contactName, mobileNumber, employee, city, state, status } = req.body;
+  const { contactName, mobileNumber, employee, city, state, status, followUpDate, narration } = req.body;
 
   if (!contactName || !mobileNumber || !employee || !city || !state || !status) {
     return res.status(400).json({ message: "All fields are required." });
@@ -205,6 +207,8 @@ app.post("/status", async (req, res) => {
       city,
       state,
       status,
+      followUpDate,
+      narration,
       timestamp: new Date(),
     });
 
@@ -214,6 +218,7 @@ app.post("/status", async (req, res) => {
     res.status(500).json({ message: "Error saving status", error: err.message });
   }
 });
+
 
 // Fetch Status Logs (GET)
 app.get("/status", async (req, res) => {
